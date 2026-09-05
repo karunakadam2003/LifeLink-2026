@@ -1,0 +1,55 @@
+steps:
+  # 1. Build Docker image using Cloud Build cache
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/lifelink-emergency-app:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/lifelink-emergency-app:latest'
+      - '.'
+
+  # 2. Push image to Google Container / Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/lifelink-emergency-app:$COMMIT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/lifelink-emergency-app:latest'
+
+  # 3. Deploy to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'lifelink-emergency-app'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/lifelink-emergency-app:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,GCP_PROJECT_ID=$PROJECT_ID,GCP_BIGQUERY_DATASET=lifelink_emergency_dw,GCP_PUBSUB_TOPIC=lifelink-emergency-telemetry'
+
+images:
+  - 'gcr.io/$PROJECT_ID/lifelink-emergency-app:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/lifelink-emergency-app:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

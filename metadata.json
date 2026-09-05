@@ -1,0 +1,10 @@
+{
+  "name": "LifeLink - Agentic AI Emergency Response",
+  "description": "Autonomous multi-agent emergency coordination platform connecting patients, responders, hospitals, and contacts with real-time re-planning and human-in-the-loop control.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
