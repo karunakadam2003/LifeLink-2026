@@ -38,4 +38,4 @@ USER node
 EXPOSE 8080
 
 # Launch LifeLink emergency coordination server
-CMD ["node", "dist/server.cjs"]
+CMD ["node", "dist/server.js"]
