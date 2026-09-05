@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { BigQuery } from '@google-cloud/bigquery';
 import { PATIENTS_DATABASE, HOSPITALS_DATABASE, AMBULANCES_DATABASE } from '../data/mockBigQuery.js';
 import { PatientProfile, Hospital, Ambulance, EmergencyEvent } from '../../src/types.js';
@@ -35,7 +36,6 @@ class BigQueryService {
   private isConnected = false;
   private projectId: string;
   private datasetId: string;
-  private keyFilename: string;
 
   private analyticsEvents: EmergencyEvent[] = [];
   private hospitalsState: Hospital[] = JSON.parse(JSON.stringify(HOSPITALS_DATABASE));
@@ -47,7 +47,6 @@ class BigQueryService {
   constructor() {
     this.projectId = process.env.GCP_PROJECT_ID || 'lifelink-agentic-2026';
     this.datasetId = process.env.GCP_BIGQUERY_DATASET || 'lifelink_emergency_dw';
-    this.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS || './gcp-credentials.json';
 
     this.initializeBigQuery().catch(err => {
       console.warn('[BigQuery Service] Initialization note:', err?.message || err);
@@ -56,10 +55,18 @@ class BigQueryService {
 
   private async initializeBigQuery(): Promise<void> {
     try {
-      this.bq = new BigQuery({
+      const bqConfig: any = {
         projectId: this.projectId,
-        keyFilename: this.keyFilename,
-      });
+      };
+
+      const customKey = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (customKey && fs.existsSync(customKey)) {
+        bqConfig.keyFilename = customKey;
+      } else if (fs.existsSync('./gcp-credentials.json')) {
+        bqConfig.keyFilename = './gcp-credentials.json';
+      }
+
+      this.bq = new BigQuery(bqConfig);
 
       console.log(`[BigQuery Service] Verifying BigQuery dataset '${this.datasetId}' in project '${this.projectId}'...`);
       const dataset = this.bq.dataset(this.datasetId);

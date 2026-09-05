@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { PubSub, Topic, Subscription } from '@google-cloud/pubsub';
 import { EmergencyEvent } from '../../src/types.js';
 import { bigQueryService } from './bigQueryService.js';
@@ -20,15 +21,22 @@ class PubSubService {
 
   private async initializeGcpPubSub(): Promise<void> {
     const projectId = process.env.GCP_PROJECT_ID || 'lifelink-agentic-2026';
-    const keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS || './gcp-credentials.json';
     const topicName = process.env.GCP_PUBSUB_TOPIC || 'lifelink-emergency-telemetry';
     const subName = process.env.GCP_PUBSUB_SUBSCRIPTION || 'lifelink-coordinator-sub';
 
     try {
-      this.gcpPubSub = new PubSub({
+      const pubsubConfig: any = {
         projectId,
-        keyFilename,
-      });
+      };
+
+      const customKey = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (customKey && fs.existsSync(customKey)) {
+        pubsubConfig.keyFilename = customKey;
+      } else if (fs.existsSync('./gcp-credentials.json')) {
+        pubsubConfig.keyFilename = './gcp-credentials.json';
+      }
+
+      this.gcpPubSub = new PubSub(pubsubConfig);
 
       // Get or create topic
       const [topic] = await this.gcpPubSub.topic(topicName).get({ autoCreate: true });
