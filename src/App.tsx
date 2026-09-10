@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Header, AppPersonaTab, UserRolePane } from './components/Header';
-import { HeroActionBar } from './components/HeroActionBar';
-import { IncidentBanner } from './components/IncidentBanner';
 import { ConsumerPassportView } from './components/ConsumerPassportView';
 import { FocusedEmergencyView } from './components/FocusedEmergencyView';
+import { SimulationRunnerView } from './components/SimulationRunnerView';
+import { EmergencyPreferencesView } from './components/EmergencyPreferencesView';
 import { FamilyPortalView } from './components/FamilyPortalView';
 import { HospitalIntakeView } from './components/HospitalIntakeView';
 import { AgentWorkflowView } from './components/AgentWorkflowView';
+import { AboutTechView } from './components/AboutTechView';
 import { InvestorBusinessView } from './components/InvestorBusinessView';
 import { ProductStoryView } from './components/ProductStoryView';
 import { BigQueryAndProtocolView } from './components/BigQueryAndProtocolView';
@@ -16,7 +17,7 @@ import { Emergency, Hospital, Ambulance, AgentActivityLog, ActionProposal, Emerg
 import { Activity, ShieldAlert, Radio, ArrowRight, ShieldCheck, Heart, Sparkles, Building2, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-// Fallback patient profile if network takes a moment
+// Default patient profile fallback
 const DEFAULT_PATIENT: PatientProfile = {
   patient_id: 'PAT-IND-8021',
   name: 'Aarav Sharma',
@@ -175,7 +176,6 @@ export default function App() {
         setProposals(data.proposals || []);
         setEvents(data.events || []);
         if (eventType === 'HOSPITAL_DIVERT_TRIGGERED' || eventType === 'TRAFFIC_CONGESTION_SPIKE') {
-          // Re-fetch hospitals to reflect updated statuses
           const hospRes = await fetch('/api/hospitals');
           if (hospRes.ok) {
             setHospitals(await hospRes.json());
@@ -297,7 +297,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white">
-      {/* 1. Header with Role/Pane and Sub-view Navigation */}
+      {/* 1. Header with Role & Persona Tab Navigation */}
       <Header
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
@@ -352,6 +352,14 @@ export default function App() {
               setActiveRole('CITIZEN');
               setCurrentTab('CONSUMER_EMERGENCY');
             }}
+            onLaunchSimulation={() => {
+              setActiveRole('CITIZEN');
+              setCurrentTab('SIMULATION_RUNNER');
+            }}
+            onOpenPreferences={() => {
+              setActiveRole('CITIZEN');
+              setCurrentTab('EMERGENCY_PREFERENCES');
+            }}
             hasActiveEmergency={isEmergencyActive}
           />
         )}
@@ -384,7 +392,7 @@ export default function App() {
               <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto" />
               <h2 className="text-xl font-bold text-white">No Active Emergency</h2>
               <p className="text-sm text-slate-400 max-w-md mx-auto">
-                No incident is currently being coordinated. You can trigger an incident simulation from your Passport or click &ldquo;Launch Hero Demo&rdquo;.
+                No incident is currently being coordinated. You can trigger an incident simulation from your Home screen or click &ldquo;Launch Hero Demo&rdquo;.
               </p>
               <div className="flex items-center justify-center gap-3">
                 <button
@@ -394,7 +402,7 @@ export default function App() {
                   }}
                   className="px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
                 >
-                  Go to Emergency Passport
+                  Go to Home Screen
                 </button>
                 <button
                   onClick={handleResetDemo}
@@ -407,7 +415,21 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 3: Family Portal */}
+        {/* VIEW 3: Interactive Simulation Runner (Demo for Judges) */}
+        {currentTab === 'SIMULATION_RUNNER' && (
+          <SimulationRunnerView
+            patient={patient}
+            hospitals={hospitals}
+            ambulances={ambulances}
+            onLaunchFullEmergency={handleTriggerEmergency}
+            onViewArchitecture={() => {
+              setActiveRole('TECH_INVESTOR');
+              setCurrentTab('AGENT_WORKFLOW');
+            }}
+          />
+        )}
+
+        {/* VIEW 4: Family Portal */}
         {currentTab === 'FAMILY_PORTAL' && (
           <FamilyPortalView
             emergency={currentEmergency}
@@ -417,7 +439,15 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 4: Hospital Intake ER Portal */}
+        {/* VIEW 5: Emergency Preferences & Autonomy */}
+        {currentTab === 'EMERGENCY_PREFERENCES' && (
+          <EmergencyPreferencesView
+            patient={patient}
+            onUpdatePatient={handleUpdatePatient}
+          />
+        )}
+
+        {/* VIEW 6: Hospital Intake ER Portal */}
         {currentTab === 'HOSPITAL_PORTAL' && (
           <HospitalIntakeView
             hospital={selectedHospital || hospitals[0]}
@@ -430,7 +460,7 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 5: Agent Command Center & Governance */}
+        {/* VIEW 7: Inside LifeLink (Agent Command Center & Governance) */}
         {currentTab === 'AGENT_WORKFLOW' && (
           <AgentWorkflowView
             logs={logs}
@@ -442,17 +472,28 @@ export default function App() {
           />
         )}
 
-        {/* VIEW: BigQuery Production Schemas, Live Query Console & ACP */}
+        {/* VIEW 8: About Google Cloud & ADK Tech */}
+        {currentTab === 'ABOUT_TECH' && (
+          <AboutTechView
+            onLaunchSimulation={() => setCurrentTab('SIMULATION_RUNNER')}
+            onViewArchitecture={() => {
+              setActiveRole('TECH_INVESTOR');
+              setCurrentTab('AGENT_WORKFLOW');
+            }}
+          />
+        )}
+
+        {/* VIEW 9: BigQuery Production Schemas, Live Query Console & ACP */}
         {currentTab === 'SCHEMAS_PROTOCOL' && (
           <BigQueryAndProtocolView />
         )}
 
-        {/* VIEW 6: Business & Investor ARR Dashboard */}
+        {/* VIEW 10: Business & Investor ARR Dashboard */}
         {currentTab === 'INVESTOR_HUB' && (
           <InvestorBusinessView />
         )}
 
-        {/* VIEW 7: Product Story Narrative */}
+        {/* VIEW 11: Product Story Narrative */}
         {currentTab === 'PRODUCT_STORY' && (
           <ProductStoryView
             onLaunchLiveDemo={handleResetDemo}
